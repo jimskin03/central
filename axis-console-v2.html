@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Axis Trinity · Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0b0d; --surface:#101215; --surface-2:#15181c; --hover:rgba(255,255,255,.04);
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+  --text:#e8eaed; --text-2:#9aa1ab; --text-3:#6b7280;
+  --acc:#5eead4; --acc-dim:rgba(94,234,212,.12); --acc-line:rgba(94,234,212,.3);
+  --ok:#4ade80; --warn:#fbbf24; --off:#6b7280; --danger:#f87171;
+  --r:10px; --r-lg:14px;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.02em}
+.mono{font-family:var(--mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:212px 1fr;min-height:100vh}
+.rail{border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 12px;gap:2px;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:9px;padding:4px 8px 20px}
+.logo-m{width:26px;height:26px;border:1px solid var(--acc-line);border-radius:7px;display:grid;place-items:center;color:var(--acc);font-size:13px;font-weight:600;flex:none}
+.logo-t{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.logo-s{font-family:var(--mono);font-size:9.5px;color:var(--text-3);letter-spacing:.06em}
+.rail nav{display:grid;gap:2px}
+.rail nav button{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--text-2);font-size:13px;text-align:left;width:100%;transition:background .12s,color .12s}
+.rail nav button:hover{background:var(--hover);color:var(--text)}
+.rail nav button[aria-current="page"]{background:var(--hover);color:var(--text);font-weight:500}
+.rail nav .ic{width:14px;flex:none;text-align:center;font-size:13px;color:var(--text-3)}
+.rail nav button[aria-current="page"] .ic{color:var(--acc)}
+.rail nav kbd{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--text-3);opacity:0;transition:opacity .12s}
+.rail nav button:hover kbd,.rail nav button[aria-current="page"] kbd{opacity:1}
+.rail-foot{margin-top:auto;padding:10px 10px 2px;border-top:1px solid var(--line);display:grid;gap:6px}
+.rail-foot .g{font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:7px}
+.rail-foot .v{font-family:var(--mono);font-size:9.5px;color:var(--text-3)}
+
+.head{height:56px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 26px;position:sticky;top:0;background:rgba(10,11,13,.85);backdrop-filter:blur(8px);z-index:5}
+.head h1{font-size:14px;font-weight:600}
+.head .sub{font-family:var(--mono);font-size:10.5px;color:var(--text-3);margin-left:10px}
+.head-r{display:flex;align-items:center;gap:8px}
+.clock{font-family:var(--mono);font-size:11px;color:var(--text-2);letter-spacing:.02em}
+.btn{border:1px solid var(--line);padding:6px 11px;border-radius:8px;font-size:12px;color:var(--text-2);transition:.12s}
+.btn:hover{background:var(--hover);color:var(--text);border-color:var(--line-strong)}
+.btn-acc{border-color:var(--acc-line);background:var(--acc-dim);color:var(--acc)}
+.btn-acc:hover{background:rgba(94,234,212,.18);color:var(--acc)}
+.who{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--text-2);flex:none}
+
+.view{padding:24px 26px 60px;max-width:1180px}
+.view[hidden]{display:none}
+.vh{margin-bottom:20px}
+.vh h2{font-size:19px;margin-bottom:4px}
+.vh p{margin:0;color:var(--text-2);font-size:13px;max-width:62ch}
+
+.card{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden}
+.card-h{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-h h3{font-size:13px}
+.card-h .meta{font-family:var(--mono);font-size:10px;color:var(--text-3);letter-spacing:.04em}
+.split{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start}
+
+/* ---------- bot table ---------- */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-family:var(--mono);font-size:9.5px;font-weight:400;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);text-align:left;padding:9px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover{background:rgba(255,255,255,.02)}
+.bot-cell{display:flex;align-items:center;gap:10px;min-width:0}
+.badge{width:30px;height:30px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface-2);display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);flex:none}
+.bot-cell b{display:block;font-size:13px;font-weight:500}
+.bot-cell span{display:block;font-size:11.5px;color:var(--text-3)}
+.state{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;white-space:nowrap}
+.d{width:6px;height:6px;border-radius:50%;flex:none;background:currentColor}
+.s-active{color:var(--ok)} .s-mention{color:var(--warn)} .s-paused{color:var(--off)}
+.answers{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-family:var(--mono);font-size:10px;padding:2.5px 7px;border-radius:5px;border:1px solid var(--line);color:var(--text-2);white-space:nowrap}
+.chip.none{color:var(--text-3);border-style:dashed}
+.seen{font-family:var(--mono);font-size:10.5px;color:var(--text-3);white-space:nowrap}
+
+/* segmented mode switch */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface-2)}
+.seg button{padding:5px 9px;font-size:11px;color:var(--text-3);border-right:1px solid var(--line);transition:.12s;white-space:nowrap}
+.seg button:last-child{border-right:0}
+.seg button:hover{color:var(--text);background:var(--hover)}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.09);color:var(--text);font-weight:500}
+
+/* ---------- today / log ---------- */
+.stats{padding:4px 16px}
+.stat{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.stat:last-child{border-bottom:0}
+.stat span{font-size:12.5px;color:var(--text-2)}
+.stat b{font-family:var(--mono);font-size:14px;font-weight:500}
+.note{padding:10px 16px 13px;font-size:11px;color:var(--text-3);border-top:1px solid var(--line);line-height:1.5}
+.log{list-style:none;margin:0;padding:2px 16px}
+.log li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.log li:last-child{border-bottom:0}
+.log .src{font-family:var(--mono);font-size:9.5px;padding:2px 6px;border-radius:4px;border:1px solid var(--line);color:var(--text-2);white-space:nowrap}
+.log p{margin:0;font-size:12.5px;color:var(--text)}
+.log p em{color:var(--text-3);font-style:normal;font-size:11.5px;display:block;margin-top:2px}
+.log time{font-family:var(--mono);font-size:10px;color:var(--text-3);white-space:nowrap}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);color:var(--text-3)}
+.filters button:hover{color:var(--text)}
+.filters button[aria-pressed="true"]{background:rgba(255,255,255,.08);color:var(--text);border-color:var(--line-strong)}
+.empty{padding:26px 16px;text-align:center;color:var(--text-3);font-size:12.5px}
+
+/* ---------- routing matrix ---------- */
+.mtx{width:100%;border-collapse:collapse}
+.mtx th{font-family:var(--mono);font-size:9.5px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);padding:10px 12px;border-bottom:1px solid var(--line);text-align:center}
+.mtx th:first-child{text-align:left;width:210px}
+.mtx td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);text-align:center}
+.mtx tr:last-child td{border-bottom:0}
+.mtx td:first-child{text-align:left}
+.cell{width:34px;height:26px;border-radius:7px;border:1px solid var(--line);color:var(--text-3);font-size:12px;display:inline-grid;place-items:center;transition:.12s}
+.cell:hover{border-color:var(--line-strong);color:var(--text-2)}
+.cell[aria-pressed="true"]{background:var(--acc-dim);border-color:var(--acc-line);color:var(--acc)}
+.rules{padding:4px 16px}
+.rule{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.rule:last-child{border-bottom:0}
+.rule b{display:block;font-size:12.5px;font-weight:500}
+.rule small{display:block;font-size:11.5px;color:var(--text-3);margin-top:2px}
+.sw{width:34px;height:20px;border-radius:11px;background:#2a2f36;padding:2px;flex:none;transition:.15s;border:1px solid transparent}
+.sw i{display:block;width:14px;height:14px;border-radius:50%;background:#7c8592;transition:.15s}
+.sw[aria-pressed="true"]{background:var(--acc-dim);border-color:var(--acc-line)}
+.sw[aria-pressed="true"] i{background:var(--acc);transform:translateX(14px)}
+.time-in{background:var(--surface-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:5px 8px;font-family:var(--mono);font-size:11.5px;width:78px}
+.danger{border-color:rgba(248,113,113,.3);color:var(--danger)}
+.danger:hover{background:rgba(248,113,113,.1);color:var(--danger);border-color:rgba(248,113,113,.45)}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,12px);background:var(--surface-2);border:1px solid var(--line-strong);color:var(--text);padding:9px 14px;border-radius:9px;font-size:12.5px;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.2s;z-index:50;display:flex;gap:9px;align-items:center;max-width:90vw}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast .k{color:var(--acc);font-family:var(--mono);font-size:10px}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static;height:auto;flex-direction:row;align-items:center;gap:4px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:10px 12px}
+  .logo{padding:0 12px 0 4px} .logo-s{display:none}
+  .rail nav{display:flex;gap:2px} .rail nav kbd{display:none} .rail-foot{display:none}
+  .split{grid-template-columns:1fr}
+  .head{padding:0 16px} .head .sub{display:none}
+  .view{padding:18px 16px 50px}
+  .tbl th:nth-child(3),.tbl td:nth-child(3),.tbl th:nth-child(4),.tbl td:nth-child(4){display:none}
+  .mtx th:first-child{width:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="rail">
+  <div class="logo">
+    <div class="logo-m">△</div>
+    <div><div class="logo-t">Axis Trinity</div><div class="logo-s">CONSOLE</div></div>
+  </div>
+  <nav aria-label="Main">
+    <button data-go="overview" aria-current="page"><span class="ic">▤</span>Overview<kbd>1</kbd></button>
+    <button data-go="routing"><span class="ic">⇄</span>Routing<kbd>2</kbd></button>
+    <button data-go="log"><span class="ic">≡</span>Log<kbd>3</kbd></button>
+    <button data-go="settings"><span class="ic">⚙</span>Settings<kbd>4</kbd></button>
+  </nav>
+  <div class="rail-foot">
+    <div class="g"><span class="d s-active" style="color:var(--ok)"></span>🌏 Axis Trinity</div>
+    <div class="v">3 BOTS · 1 ADMIN</div>
+  </div>
+</aside>
+
+<main>
+  <header class="head">
+    <div style="display:flex;align-items:baseline;min-width:0">
+      <h1 id="vTitle">Overview</h1><span class="sub" id="vSub">3 bots</span>
+    </div>
+    <div class="head-r">
+      <span class="clock" id="clock">--:--</span>
+      <button class="btn" id="btnReset">Reset demo</button>
+      <button class="btn btn-acc" id="btnSay">Send to group</button>
+      <div class="who" title="Gregy · admin">G</div>
+    </div>
+  </header>
+
+  <!-- ================= OVERVIEW ================= -->
+  <section class="view" id="v-overview">
+    <div class="vh">
+      <h2>Who's on, and who they answer</h2>
+      <p>One table, three bots. Change a bot's mode inline — nothing else to click through.</p>
+    </div>
+
+    <div class="split">
+      <div class="card">
+        <div class="card-h"><h3>Bots</h3><span class="meta" id="botSum">—</span></div>
+        <table class="tbl">
+          <thead><tr><th>Bot</th><th>State</th><th>Answers to</th><th>Last seen</th><th style="text-align:right">Mode</th></tr></thead>
+          <tbody id="botRows"></tbody>
+        </table>
+      </div>
+
+      <div style="display:grid;gap:14px">
+        <div class="card">
+          <div class="card-h"><h3>Today</h3><span class="meta">SAMPLE</span></div>
+          <div class="stats">
+            <div class="stat"><span>Messages handled</span><b id="kMsg">—</b></div>
+            <div class="stat"><span>Handoffs</span><b id="kHand">—</b></div>
+            <div class="stat"><span>Duplicates blocked</span><b id="kDup">—</b></div>
+          </div>
+          <p class="note">Sample figures — this prototype isn't wired to the gateway yet.</p>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Latest</h3><button class="btn" data-go="log" style="padding:4px 9px">Open log</button></div>
+          <ul class="log" id="miniLog"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ROUTING ================= -->
+  <section class="view" id="v-routing" hidden>
+    <div class="vh">
+      <h2>Routing</h2>
+      <p>Tick who each bot is allowed to answer. This is the setting that stops two bots replying to the same message.</p>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h"><h3>Permission matrix</h3><span class="meta">CLICK TO TOGGLE</span></div>
+      <div style="overflow-x:auto">
+        <table class="mtx">
+          <thead><tr><th>Bot</th><th>Gregy</th><th>Team</th><th>Other bots</th><th>External</th></tr></thead>
+          <tbody id="mtxRows"></tbody>
+        </table>
+      </div>
+      <p class="note">A paused bot ignores this matrix entirely.</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Conflict rules</h3><span class="meta">GROUP-WIDE</span></div>
+      <div class="rules">
+        <div class="rule">
+          <div><b>Duplicate guard</b><small>If a bot is mentioned by name, the others stay quiet.</small></div>
+          <button class="sw" role="switch" aria-pressed="true" data-flag="dup" aria-label="Duplicate guard"><i></i></button>
+        </div>
+        <div class="rule">
+          <div><b>A.Ira has priority</b><small>When no one is named, A.Ira answers first.</small></div>
+          <button class="sw" role="switch" aria-pressed="true" data-flag="prio" aria-label="A.Ira priority"><i></i></button>
+        </div>
+        <div class="rule">
+          <div><b>Bot-to-bot replies</b><small>Allow bots to answer each other. Off avoids loops.</small></div>
+          <button class="sw" role="switch" aria-pressed="false" data-flag="b2b" aria-label="Bot to bot replies"><i></i></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LOG ================= -->
+  <section class="view" id="v-log" hidden>
+    <div class="vh">
+      <h2>Log</h2>
+      <p>What the bots did, newest first.</p>
+    </div>
+    <div class="card">
+      <div class="card-h">
+        <div class="filters" id="logFilters">
+          <button data-f="all" aria-pressed="true">All</button>
+          <button data-f="A.Ira" aria-pressed="false">A.Ira</button>
+          <button data-f="A.IXiin" aria-pressed="false">A.IXiin</button>
+          <button data-f="A.Ilicia" aria-pressed="false">A.Ilicia</button>
+          <button data-f="System" aria-pressed="false">System</button>
+        </div>
+        <span class="meta" id="logCount">—</span>
+      </div>
+      <ul class="log" id="fullLog"></ul>
+      <div class="empty" id="logEmpty" hidden>Nothing from this bot yet.</div>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section class="view" id="v-settings" hidden>
+    <div class="vh">
+      <h2>Settings</h2>
+      <p>Four things worth having. Everything saves to this browser.</p>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h"><h3>Group behaviour</h3><span class="meta">SAVED LOCALLY</span></div>
+      <div class="rules">
+        <div class="rule">
+          <div><b>Welcome new members</b><small>A.Ira posts a short intro when someone joins.</small></div>
+          <button class="sw" role="switch" aria-pressed="true" data-flag="greet" aria-label="Welcome new members"><i></i></button>
+        </div>
+        <div class="rule">
+          <div><b>Quiet hours</b><small>Bots hold non-urgent replies overnight.</small></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input class="time-in" type="time" id="qStart" value="23:00" aria-label="Quiet hours start">
+            <span style="color:var(--text-3);font-size:11px">→</span>
+            <input class="time-in" type="time" id="qEnd" value="07:00" aria-label="Quiet hours end">
+            <button class="sw" role="switch" aria-pressed="false" data-flag="quiet" aria-label="Quiet hours"><i></i></button>
+          </div>
+        </div>
+        <div class="rule">
+          <div><b>Log retention</b><small>How long activity stays in the log.</small></div>
+          <div class="seg" id="retSeg">
+            <button data-ret="7" aria-pressed="false">7d</button>
+            <button data-ret="30" aria-pressed="true">30d</button>
+            <button data-ret="90" aria-pressed="false">90d</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Careful</h3><span class="meta">AFFECTS ALL BOTS</span></div>
+      <div class="rules">
+        <div class="rule">
+          <div><b>Pause every bot</b><small>Silences all three at once. Reversible.</small></div>
+          <button class="btn danger" id="btnPauseAll">Pause all</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const KEY='axis.console.v2';
+
+const BOTS=[
+  {id:'A.Ira',   ini:'AI', role:'Orchestrator',   mode:'active',  seen:2},
+  {id:'A.IXiin', ini:'AX', role:'Reactive help',  mode:'mention', seen:18},
+  {id:'A.Ilicia',ini:'AL', role:'External liaison',mode:'active', seen:41}
+];
+const AUD=['gregy','team','bots','external'];
+const AUD_LABEL={gregy:'Gregy',team:'Team',bots:'Other bots',external:'External'};
+const MODES=[['active','Active'],['mention','On mention'],['paused','Paused']];
+
+const DEFAULTS={
+  modes:{'A.Ira':'active','A.IXiin':'mention','A.Ilicia':'active'},
+  routes:{
+    'A.Ira':{gregy:1,team:1,bots:1,external:0},
+    'A.IXiin':{gregy:1,team:1,bots:1,external:0},
+    'A.Ilicia':{gregy:1,team:0,bots:0,external:1}
+  },
+  flags:{dup:1,prio:1,b2b:0,greet:1,quiet:0},
+  quiet:{start:'23:00',end:'07:00'},
+  ret:'30'
+};
+let S=load();
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY));return r?deep(DEFAULTS,r):deep(DEFAULTS,{})}catch(e){return deep(DEFAULTS,{})}}
+function deep(a,b){const o=JSON.parse(JSON.stringify(a));for(const k in b){o[k]=(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k]))?Object.assign(o[k]||{},b[k]):b[k]}return o}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ---- log (relative to load time, so it never shows a stale date) ---- */
+const t0=Date.now();
+let LOG=[
+  {src:'A.Ira',    m:18,  t:'Handed off to A.IXiin',      d:'Gregy mentioned A.IXiin by name.'},
+  {src:'A.IXiin',  m:19,  t:'Answered Gregy',             d:'"How should we split next week?"'},
+  {src:'A.Ilicia', m:44,  t:'Replied to an outsider',     d:'Kept to the public summary only.'},
+  {src:'System',   m:66,  t:'Duplicate blocked',          d:'A.Ira stayed quiet; A.IXiin was named.'},
+  {src:'A.Ira',    m:95,  t:'Summarised the thread',      d:'12 messages → 4 bullets.'},
+  {src:'System',   m:150, t:'Routing updated',            d:'A.Ilicia allowed to answer External.'}
+];
+function ago(min){
+  if(min<1)return 'now';
+  if(min<60)return min+'m';
+  const h=Math.floor(min/60); if(h<24)return h+'h';
+  return Math.floor(h/24)+'d';
+}
+function pushLog(src,t,d){LOG.unshift({src,t,d,at:Date.now()});renderLog();renderMini()}
+function minsOf(e){return e.at?Math.floor((Date.now()-e.at)/60000):e.m+Math.floor((Date.now()-t0)/60000)}
+
+/* ---- clock (Asia/Kuala_Lumpur) ---- */
+function tick(){
+  const now=new Date();
+  const s=now.toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+  $('#clock').textContent=s.replace(',','').toUpperCase()+' MYT';
+}
+
+/* ---- toast ---- */
+let tid;
+function toast(msg,key){
+  const el=$('#toast');
+  el.innerHTML=(key?'<span class="k">'+key+'</span>':'')+'<span></span>';
+  el.lastChild.textContent=msg;
+  el.classList.add('on');clearTimeout(tid);tid=setTimeout(()=>el.classList.remove('on'),2200);
+}
+
+/* ---- render: bot table ---- */
+function stateOf(m){return m==='active'?['s-active','ACTIVE']:m==='mention'?['s-mention','ON MENTION']:['s-paused','PAUSED']}
+function renderBots(){
+  const tb=$('#botRows');tb.innerHTML='';
+  BOTS.forEach(b=>{
+    const mode=S.modes[b.id], [cls,label]=stateOf(mode);
+    const on=AUD.filter(a=>S.routes[b.id][a]);
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><div class="bot-cell"><div class="badge">'+b.ini+'</div><div><b>'+b.id+'</b><span>'+b.role+'</span></div></div></td>'+
+      '<td><span class="state '+cls+'"><i class="d"></i>'+label+'</span></td>'+
+      '<td><div class="answers">'+(mode==='paused'?'<span class="chip none">nobody</span>':(on.length?on.map(a=>'<span class="chip">'+AUD_LABEL[a]+'</span>').join(''):'<span class="chip none">nobody</span>'))+'</div></td>'+
+      '<td><span class="seen">'+ago(b.seen+Math.floor((Date.now()-t0)/60000))+' ago</span></td>'+
+      '<td style="text-align:right"><div class="seg" data-bot="'+b.id+'">'+
+        MODES.map(([v,l])=>'<button data-mode="'+v+'" aria-pressed="'+(mode===v)+'">'+l+'</button>').join('')+
+      '</div></td>';
+    tb.appendChild(tr);
+  });
+  const act=BOTS.filter(b=>S.modes[b.id]!=='paused').length;
+  $('#botSum').textContent=act+'/'+BOTS.length+' RESPONDING';
+  $('#vSub').textContent=act+' of 3 responding';
+}
+$('#botRows').addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-mode]');if(!btn)return;
+  const id=btn.closest('.seg').dataset.bot, m=btn.dataset.mode;
+  if(S.modes[id]===m)return;
+  S.modes[id]=m;save();renderBots();renderMatrix();
+  toast(id+' → '+MODES.find(x=>x[0]===m)[1].toLowerCase(),'MODE');
+  pushLog('System','Mode changed',id+' set to '+MODES.find(x=>x[0]===m)[1].toLowerCase()+'.');
+});
+
+/* ---- render: matrix ---- */
+function renderMatrix(){
+  const tb=$('#mtxRows');tb.innerHTML='';
+  BOTS.forEach(b=>{
+    const paused=S.modes[b.id]==='paused';
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td><div class="bot-cell"><div class="badge">'+b.ini+'</div><div><b>'+b.id+'</b><span>'+
+      (paused?'paused — matrix ignored':b.role)+'</span></div></div></td>'+
+      AUD.map(a=>'<td><button class="cell" role="switch" aria-pressed="'+(S.routes[b.id][a]?'true':'false')+
+        '" data-bot="'+b.id+'" data-aud="'+a+'" aria-label="'+b.id+' answers '+AUD_LABEL[a]+'"'+
+        (paused?' disabled style="opacity:.35"':'')+'>'+(S.routes[b.id][a]?'✓':'')+'</button></td>').join('');
+    tb.appendChild(tr);
+  });
+}
+$('#mtxRows').addEventListener('click',e=>{
+  const c=e.target.closest('.cell');if(!c||c.disabled)return;
+  const {bot,aud}=c.dataset;
+  S.routes[bot][aud]=S.routes[bot][aud]?0:1;save();
+  renderMatrix();renderBots();
+  toast(bot+(S.routes[bot][aud]?' now answers ':' no longer answers ')+AUD_LABEL[aud],'ROUTING');
+});
+
+/* ---- render: logs ---- */
+let filter='all';
+function row(e){
+  return '<li><span class="src">'+e.src+'</span><p>'+e.t+'<em>'+e.d+'</em></p><time>'+ago(minsOf(e))+'</time></li>';
+}
+function renderLog(){
+  const list=LOG.filter(e=>filter==='all'||e.src===filter);
+  $('#fullLog').innerHTML=list.map(row).join('');
+  $('#logCount').textContent=list.length+' EVENTS';
+  $('#logEmpty').hidden=list.length>0;
+}
+function renderMini(){$('#miniLog').innerHTML=LOG.slice(0,4).map(row).join('')}
+$('#logFilters').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-f]');if(!b)return;
+  filter=b.dataset.f;
+  $$('#logFilters button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  renderLog();
+});
+
+/* ---- flags & settings ---- */
+function renderFlags(){
+  $$('[data-flag]').forEach(b=>b.setAttribute('aria-pressed',S.flags[b.dataset.flag]?'true':'false'));
+  $('#qStart').value=S.quiet.start;$('#qEnd').value=S.quiet.end;
+  $$('#retSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ret===S.ret)));
+}
+document.addEventListener('click',e=>{
+  const f=e.target.closest('[data-flag]');
+  if(f){const k=f.dataset.flag;S.flags[k]=S.flags[k]?0:1;save();renderFlags();
+    toast(f.closest('.rule').querySelector('b').textContent+(S.flags[k]?' on':' off'),'SETTING');return}
+  const r=e.target.closest('#retSeg button');
+  if(r){S.ret=r.dataset.ret;save();renderFlags();toast('Log retention: '+S.ret+' days','SETTING')}
+});
+['qStart','qEnd'].forEach(id=>$('#'+id).addEventListener('change',()=>{
+  S.quiet.start=$('#qStart').value;S.quiet.end=$('#qEnd').value;save();
+  toast('Quiet hours '+S.quiet.start+'–'+S.quiet.end,'SETTING');
+}));
+
+/* ---- kpis (stable per session, clearly sampled) ---- */
+function renderKpis(){$('#kMsg').textContent='84';$('#kHand').textContent='6';$('#kDup').textContent='3'}
+
+/* ---- nav ---- */
+const TITLES={overview:'Overview',routing:'Routing',log:'Log',settings:'Settings'};
+const SUBS={routing:'permissions',log:'activity',settings:'group'};
+function go(v){
+  $$('.view').forEach(s=>s.hidden=(s.id!=='v-'+v));
+  $$('.rail nav button').forEach(b=>b.dataset.go===v?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+  $('#vTitle').textContent=TITLES[v];
+  $('#vSub').textContent=v==='overview'?(BOTS.filter(b=>S.modes[b.id]!=='paused').length+' of 3 responding'):SUBS[v];
+  location.hash=v;window.scrollTo(0,0);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go)});
+document.addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName))return;
+  const map={'1':'overview','2':'routing','3':'log','4':'settings'};
+  if(map[e.key]){go(map[e.key]);toast(TITLES[map[e.key]],'⌨')}
+});
+
+/* ---- top actions ---- */
+$('#btnSay').addEventListener('click',()=>{
+  pushLog('A.Ira','Message sent to group','Posted by Gregy from the console.');
+  toast('Sent to 🌏 Axis Trinity','GROUP');
+});
+$('#btnPauseAll').addEventListener('click',()=>{
+  const anyOn=BOTS.some(b=>S.modes[b.id]!=='paused');
+  BOTS.forEach(b=>S.modes[b.id]=anyOn?'paused':DEFAULTS.modes[b.id]);
+  save();renderBots();renderMatrix();
+  $('#btnPauseAll').textContent=anyOn?'Resume all':'Pause all';
+  pushLog('System',anyOn?'All bots paused':'All bots resumed','Triggered from Settings.');
+  toast(anyOn?'All three bots paused':'All three bots resumed','CAREFUL');
+});
+$('#btnReset').addEventListener('click',()=>{
+  S=deep(DEFAULTS,{});save();renderBots();renderMatrix();renderFlags();
+  $('#btnPauseAll').textContent='Pause all';
+  toast('Back to defaults','RESET');
+});
+
+/* ---- boot ---- */
+renderBots();renderMatrix();renderFlags();renderKpis();renderLog();renderMini();tick();
+setInterval(tick,15000);
+setInterval(()=>{renderLog();renderMini();renderBots()},60000);
+go((location.hash||'#overview').slice(1) in TITLES?(location.hash||'#overview').slice(1):'overview');
+})();
+</script>
+</body>
+</html>
