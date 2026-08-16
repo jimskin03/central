@@ -44,6 +44,9 @@ h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.02em}
 .rail-foot{margin-top:auto;padding:10px 10px 2px;border-top:1px solid var(--line);display:grid;gap:6px}
 .rail-foot .g{font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:7px}
 .rail-foot .v{font-family:var(--mono);font-size:9.5px;color:var(--text-3)}
+.rail-foot a.bot-link{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-2);text-decoration:none;padding:4px 6px;border-radius:7px;transition:background .12s,color .12s}
+.rail-foot a.bot-link:hover{background:var(--hover);color:var(--acc)}
+.rail-foot a.bot-link .bl-s{font-family:var(--mono);font-size:9.5px;color:var(--text-3)}
 
 .head{height:56px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 26px;position:sticky;top:0;background:rgba(10,11,13,.85);backdrop-filter:blur(8px);z-index:5}
 .head h1{font-size:14px;font-weight:600}
@@ -169,6 +172,9 @@ h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.02em}
     <button data-go="settings"><span class="ic">⚙</span>Settings<kbd>4</kbd></button>
   </nav>
   <div class="rail-foot">
+    <a class="bot-link" href="https://t.me/ailice69_bot" target="_blank" rel="noopener" title="Chat with @ailice69_bot on Telegram">
+      <span>✈</span><span>@ailice69_bot</span><span class="bl-s">chat</span>
+    </a>
     <div class="g"><span class="d s-active" style="color:var(--ok)"></span>🌏 Axis Trinity</div>
     <div class="v">3 BOTS · 1 ADMIN</div>
   </div>
@@ -504,6 +510,10 @@ document.addEventListener('keydown',e=>{
 
 /* ---- top actions ---- */
 $('#btnSay').addEventListener('click',()=>{
+  const last5=LOG.slice(0,5);
+  const body=last5.map(e=>'• '+e.src+': '+e.t+(e.d?' — '+e.d:'')).join('\n');
+  const url='https://t.me/ailice69_bot?text='+encodeURIComponent('Last 5 logs:\n'+body);
+  window.open(url,'_blank','noopener');
   pushLog('A.Ira','Message sent to group','Posted by Gregy from the console.');
   toast('Sent to 🌏 Axis Trinity','GROUP');
 });
